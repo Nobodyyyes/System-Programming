@@ -1,0 +1,542 @@
+System Programming / lab1 
+
+1. Имя компьютера, имя пользователя.
+2. Пути к системным каталогам Windows.
+3. Версия операционной системы.
+4. Системные метрики (3 системные метрики)
+5. Системные параметры (3 системных параметра):
+6. Системные цвета (определить цвет для символьных констант и изменить его на
+любой другой)
+
+COLOR_BTNFACE, COLOR_GRAYTEXT, COLOR_DESKTOP
+
+GetSystemTime, GetTimeZonelnformation, EnumTimeFormats
+
+AnsiToOemBuff, GetCursorPos, GetNumberFormat, SetCaretPos
+
+--------------------------------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows.Forms;
+
+using System.Runtime.InteropServices;
+using System.Security.Policy;
+using System.Text;
+using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Reflection.Emit;
+
+namespace lab1
+{
+    public partial class Form1 : Form
+    {
+        // GetComputerName
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern bool GetComputerName(StringBuilder lpBuffer, ref uint lpnSize);
+
+        // GetUserName
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool GetUserName(System.Text.StringBuilder sb, ref Int32 length);
+
+        // GetWindowsDirectory
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern uint GetWindowsDirectory(StringBuilder lpBuffer, uint uSize);
+
+        //GetVersionEx 
+        [DllImport("kernel32", SetLastError = true)]
+        private static extern bool GetVersionEx(ref OSVERSIONINFOEX osvi);
+        [DllImport("kernel32.dll")]
+        static extern uint GetTimeZoneInformation(out TIME_ZONE_INFORMATION lpTimeZoneInformation);
+
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //static extern bool GetSystemTimes(out FILETIME lpIdleTime, out FILETIME lpKernelTime, out FILETIME lpUserTime);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct TIME_ZONE_INFORMATION
+        {
+            [MarshalAs(UnmanagedType.I4)]
+            public Int32 Bias;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public string StandardName;
+            public SYSTEMTIME StandardDate;
+            [MarshalAs(UnmanagedType.I4)]
+            public Int32 StandardBias;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+            public string DaylightName;
+            public SYSTEMTIME DaylightDate;
+            [MarshalAs(UnmanagedType.I4)]
+            public Int32 DaylightBias;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SYSTEMTIME
+        {
+            [MarshalAs(UnmanagedType.U2)] public short Year;
+            [MarshalAs(UnmanagedType.U2)] public short Month;
+            [MarshalAs(UnmanagedType.U2)] public short DayOfWeek;
+            [MarshalAs(UnmanagedType.U2)] public short Day;
+            [MarshalAs(UnmanagedType.U2)] public short Hour;
+            [MarshalAs(UnmanagedType.U2)] public short Minute;
+            [MarshalAs(UnmanagedType.U2)] public short Second;
+            [MarshalAs(UnmanagedType.U2)] public short Milliseconds;
+
+            public SYSTEMTIME(DateTime dt)
+            {
+                dt = dt.ToUniversalTime();  // SetSystemTime expects the SYSTEMTIME in UTC
+                Year = (short)dt.Year;
+                Month = (short)dt.Month;
+                DayOfWeek = (short)dt.DayOfWeek;
+                Day = (short)dt.Day;
+                Hour = (short)dt.Hour;
+                Minute = (short)dt.Minute;
+                Second = (short)dt.Second;
+                Milliseconds = (short)dt.Millisecond;
+            }
+        }
+        private struct OSVERSIONINFOEX
+        {
+            public uint dwOSVersionInfoSize;
+            public uint dwMajorVersion;
+            public uint dwMinorVersion;
+            public uint dwBuildNumber;
+            public uint dwPlatformId;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string szCSDVersion;
+            public UInt16 wServicePackMajor;
+            public UInt16 wServicePackMinor;
+            public UInt16 wSuiteMask;
+            public byte wProductType;
+            public byte wReserved;
+        }
+
+        //GetMetrics
+        [DllImport("user32.dll")]
+        static extern int GetSystemMetrics(SystemMetric smIndex);
+        [DllImport("user32.dll")]
+        static extern uint GetSysColor(int nIndex);
+        [DllImport("user32.dll")]
+        static extern bool SetSysColors(int cElements, int[] lpaElements, int[] lpaRgbValues);
+
+        //GetSystemMetrics
+        public enum SystemMetric
+        {
+            SM_CXSCREEN = 0,  // 0x00
+            SM_CYSCREEN = 1,  // 0x00
+            SM_SECURE = 44, // 0x2C
+        }
+
+        //SystemParametersInfo 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
+
+        //SystemParametersInfo 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SystemParametersInfo(uint uiAction, uint uiParam, int[] pvParam, uint fWinIni);
+        // For reading a string parameter
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool SystemParametersInfo(uint uiAction, uint uiParam, StringBuilder pvParam, uint fWinIni);
+
+        [DllImport("User32.dll")]
+        static extern Boolean SystemParametersInfo(
+            UInt32 uiAction,
+            UInt32 uiParam,
+            UInt32 pvParam,
+            UInt32 fWinIni);
+
+        //GetCursorPos
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GetCursorPos(out POINT point);
+
+        //SetCaresPos
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool SetCaretPosition(int x, int y);
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        // GetComputerName
+        void getCN()
+        {
+            StringBuilder stringBuilder = new StringBuilder(255);
+            uint lpnSize = 255;
+            GetComputerName(stringBuilder, ref lpnSize);
+            getcn.Text = "Computer name: " + stringBuilder.ToString();
+        }
+
+        // GetUserName
+        void getUN()
+        {
+            StringBuilder stringBuilder = new StringBuilder(255);
+            Int32 lpnSize = 255;
+            GetUserName(stringBuilder, ref lpnSize);
+            //отображение названия 
+            getuser.Text = "User name: " + stringBuilder.ToString();
+        }
+
+        // GetWindowsDirectory
+        void getWD()
+        {
+            StringBuilder stringBuilder = new StringBuilder(100);
+            uint uSize = 100;
+            GetWindowsDirectory(stringBuilder, uSize);
+            //отображение названия 
+            direct.Text = "Windows Directory: " + stringBuilder.ToString();
+        }
+
+        //GetVersionEx  
+        void getVE()
+        {
+            OSVERSIONINFOEX osVersionInfo = new OSVERSIONINFOEX();
+            osVersionInfo.dwOSVersionInfoSize = (uint)Marshal.SizeOf(osVersionInfo);
+            GetVersionEx(ref osVersionInfo);
+            //отображение названия 
+            version.Text = "Get Version Ex: " + osVersionInfo.dwOSVersionInfoSize.ToString();
+        }
+
+        void getSM()
+        {
+
+            //Ширина и высота экрана по X 
+            int h = GetSystemMetrics(SystemMetric.SM_CXSCREEN);
+            metric_one.Text = "Get Metrics X: " + GetSystemMetrics(SystemMetric.SM_CXSCREEN);
+
+
+            //Ширина и высота экрана по Y 
+            int g = GetSystemMetrics(SystemMetric.SM_CYSCREEN);
+            metric_two.Text = "Get Metrics Y: " + GetSystemMetrics(SystemMetric.SM_CYSCREEN);
+
+
+            /*Эту системную метрику следует игнорировать, он всегда возвращает 0.*/
+            int k = GetSystemMetrics(SystemMetric.SM_SECURE);
+            metric_three.Text = "Get Secure: " + GetSystemMetrics(SystemMetric.SM_SECURE);
+
+        }
+
+        //GetSystemParametersInfo 
+        void getSP()
+        {
+
+            //Извлекает полный путь к файлу растрового изображения для обоев рабочего стола
+            uint SPI_GETDESKWALLPAPER = 0x0073;
+            StringBuilder stringBuilder = new StringBuilder(255);
+            SystemParametersInfo(SPI_GETDESKWALLPAPER, 255, stringBuilder, 0);
+            wallpaper.Text = "Desktop Wallpaper: " + stringBuilder.ToString();
+
+
+            /*
+            Получает текущую скорость мыши. Скорость мыши определяет, насколько далеко будет 
+            перемещаться указатель в зависимости от расстояния, на которое перемещается мышь.
+            Параметр pvParam должен указывать на целое число, которое получает значение в 
+            диапазоне от 1 (самый медленный) до 20 (самый быстрый). Значение 10 является значением по умолчанию. 
+            Значение может быть установлено конечным пользователем с помощью приложения панели управления мышью или приложением с помощью SPI_SETMOUSESPEED .
+            */
+            uint SPI_GETMOUSESPEED = 0x0016;
+            uint delay = 0;
+            SystemParametersInfo(SPI_GETMOUSESPEED, 0, ref delay, 0);
+            mousespeed.Text = "Mouse speed: " + delay.ToString();
+
+
+
+            /*
+            Определяет, есть ли вокруг курсора тень. Параметр pvParam должен указывать на переменную BOOL , которая принимает значение TRUE , если тень включена, 
+            и FALSE , если она отключена. Этот эффект появляется, только если в системе глубина цвета больше 256 цветов.
+             */
+            uint SPI_GETCURSORSHADOW = 0x0003;
+            uint cursour = 0; ;
+            SystemParametersInfo(SPI_GETCURSORSHADOW, 0, cursour, 0);
+            p1.Text = "Shadow of cursor: " + cursour.ToString();
+
+        }
+        List<ItemColor> listSystemColors = new List<ItemColor>();
+
+        public enum SystemElementsToColor
+        {
+            COLOR_BTNFACE = 15,//Face color for three-dimensional display elements and for dialog box backgrounds.The associated foreground color is COLOR_BTNTEXT.
+            COLOR_DESKTOP = 1,//Desktop.
+            COLOR_GRAYTEXT = 17,//Grayed (disabled) text. This color is set to 0 if the current display driver does not support a solid gray color.
+        }
+        public enum COLOR : int
+        {
+            SCROLLBAR = 0,
+            BACKGROUND = 1,
+            DESKTOP = 1,
+            ACTIVECAPTION = 2,
+            INACTIVECAPTION = 3,
+            MENU = 4,
+            WINDOW = 5,
+            WINDOWFRAME = 6,
+            MENUTEXT = 7,
+            WINDOWTEXT = 8,
+            CAPTIONTEXT = 9,
+            ACTIVEBORDER = 10,
+            INACTIVEBORDER = 11,
+            APPWORKSPACE = 12,
+            HIGHLIGHT = 13,
+            HIGHLIGHTTEXT = 14,
+            BTNFACE = 15,
+            THREEDFACE = 15,
+            BTNSHADOW = 16,
+            THREEDSHADOW = 16,
+            GRAYTEXT = 17,
+            BTNTEXT = 18,
+            INACTIVECAPTIONTEXT = 19,
+            BTNHIGHLIGHT = 20,
+            TREEDHIGHLIGHT = 20,
+            THREEDHILIGHT = 20,
+            BTNHILIGHT = 20,
+            THREEDDKSHADOW = 21,
+            THREEDLIGHT = 22,
+            INFOTEXT = 23,
+            INFOBK = 24
+        }
+
+
+
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct POINT
+        {
+            public Int32 X;
+            public Int32 Y;
+        }
+        public void Main(string[] args)
+        {
+           
+        }
+        public void getGCP()
+        {
+            POINT p;
+            if (GetCursorPos(out p))
+            {
+                gets.Text = Convert.ToString(p.X) + ";" + Convert.ToString(p.Y);
+            }
+        }
+
+    
+
+
+
+
+
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+            getCN();
+            getUN();
+            getWD();
+            getVE();
+            getSM();
+            getSP();
+            fillComboBoxes();
+            listSystemColors = saveSystemColors();
+            getZone();
+            getGCP();
+            
+
+        }
+
+        class ItemColor
+        {
+            string itemName;//имя элемента
+            Color itemColor;//цвет элемента
+            bool hasChanged = false;//были изменения?
+
+            public ItemColor(string itemName, Color itemColor)
+            {
+                this.ItemName = itemName;
+                this.IItemColor = itemColor;
+            }
+
+            public string ItemName { get => itemName; set => itemName = value; }
+            public Color IItemColor { get => itemColor; set => itemColor = value; }
+            public bool HasChanged { get => hasChanged; set => hasChanged = value; }
+        }
+
+        //SetCursor
+        void getSC()
+        {
+
+            IntPtr handle = IntPtr.Zero;
+            // handle = SetCursor(handle);
+            setbut.Text += ": " + handle.ToString();
+        }
+
+        void fillComboBoxes()
+        {// меню 1/2
+            cbxSysEl.DataSource = Enum.GetValues(typeof(SystemElementsToColor));
+            cbxSysEl.SelectedItem = null;
+            cbxSysEl.Text = "Выберите элемент";
+            foreach (System.Reflection.PropertyInfo prop in typeof(Color).GetProperties())
+            {
+                if (prop.PropertyType.FullName == "System.Drawing.Color")
+                {
+                    cbxColor.Items.Add(prop.Name);
+                }
+            }
+            cbxColor.SelectedItem = null;
+            cbxColor.Text = "Выберите цвет";
+        }
+
+        List<ItemColor> saveSystemColors()//сохраняет  значения текущего цвета 
+        {
+            List<ItemColor> list = new List<ItemColor>();//список системных цветов
+            foreach (SystemElementsToColor se in cbxSysEl.Items)
+            {
+                int color1 = Convert.ToInt32(GetSysColor((int)se));
+                Color color = Color.FromArgb(color1 & 0xFF, (color1 & 0xFF00) >> 8, (color1 & 0xFF0000) >> 16);
+                list.Add(new ItemColor(se.ToString(), color));
+
+            }
+            return list;
+        }
+        void ResetColors()//сброс 
+        {
+            listSystemColors.ForEach(x =>
+            {
+                if (x.HasChanged)
+                {
+                    Color oldColor = x.IItemColor;
+                    SystemElementsToColor item = (SystemElementsToColor)Enum.Parse(typeof(SystemElementsToColor), x.ItemName);
+                    SetSysColors(1, new int[] { (int)item }, new int[] { System.Drawing.ColorTranslator.ToWin32(oldColor) });
+                    x.HasChanged = false;
+                }
+            });
+            lblSCs.Text = "";
+        }
+
+        void GetSystemColor()
+        {// получение цвета 
+            if (cbxSysEl.SelectedItem != null)
+            {
+                //элемент выбранный из списка
+                SystemElementsToColor item = (SystemElementsToColor)Enum.Parse(typeof(SystemElementsToColor), cbxSysEl.SelectedItem.ToString());
+                //возвращает RGB цвет элемента item 
+                int color1 = Convert.ToInt32(GetSysColor((int)item));
+                //преобразование RGB в Color
+                Color color = Color.FromArgb(color1 & 0xFF, (color1 & 0xFF00) >> 8, (color1 & 0xFF0000) >> 16);
+                setbut.Text += "\n" + item.ToString() + " " + color;
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)//get 
+        {
+            GetSystemColor();
+        }
+
+        private void button2_Click(object sender, EventArgs e)//set
+        {
+            if (cbxColor.SelectedItem != null && cbxSysEl.SelectedItem != null)
+            {
+                Color newColor = Color.FromName(cbxColor.SelectedItem.ToString());
+                SystemElementsToColor item = (SystemElementsToColor)Enum.Parse(typeof(SystemElementsToColor), cbxSysEl.SelectedItem.ToString());
+
+                listSystemColors.ForEach(x =>
+                {
+                    if (x.ItemName == item.ToString())
+                    {
+                        lblSCs.Text = "oldColor: ";
+                        GetSystemColor();
+                        SetSysColors(1, new int[] { (int)item }, new int[] { System.Drawing.ColorTranslator.ToWin32(newColor) });
+                        lblSCs.Text += "\nChosenColor: " + x.ItemName + " " + newColor.A + " " + newColor.R + " " + newColor.G + " " + newColor.B;
+                        lblSCs.Text += "\nnewColor: ";
+
+                        x.HasChanged = true;
+                        GetSystemColor();
+                    }
+                });
+
+            }
+            else { System.Windows.Forms.MessageBox.Show("What?"); }
+        }
+
+        private void button3_Click(object sender, EventArgs e)//сброс 
+        {
+            ResetColors();
+        }
+
+
+
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click_1(object sender, EventArgs e)
+        {
+            if (cbxSysEl.SelectedItem != null)
+            {
+                //элемент выбранный из списка
+                SystemElementsToColor item = (SystemElementsToColor)Enum.Parse(typeof(SystemElementsToColor), cbxSysEl.SelectedItem.ToString());
+                //возвращает RGB цвет элемента item 
+                int color1 = Convert.ToInt32(GetSysColor((int)item));
+                //преобразование RGB в Color
+                Color color = Color.FromArgb(color1 & 0xFF, (color1 & 0xFF00) >> 8, (color1 & 0xFF0000) >> 16);
+                lblSCs.Text += "\n" + item.ToString() + " " + color;
+            }
+        }
+
+        private void setbut_Click(object sender, EventArgs e)
+        {
+            if (cbxColor.SelectedItem != null && cbxSysEl.SelectedItem != null)
+            {
+                Color newColor = Color.FromName(cbxColor.SelectedItem.ToString());
+                SystemElementsToColor item = (SystemElementsToColor)Enum.Parse(typeof(SystemElementsToColor), cbxSysEl.SelectedItem.ToString());
+
+                listSystemColors.ForEach(x =>
+                {
+                    if (x.ItemName == item.ToString())
+                    {
+                        lblSCs.Text = "oldColor: ";
+                        GetSystemColor();
+                        SetSysColors(1, new int[] { (int)item }, new int[] { System.Drawing.ColorTranslator.ToWin32(newColor) });
+                        lblSCs.Text += "\nChosenColor: " + x.ItemName + " " + newColor.A + " " + newColor.R + " " + newColor.G + " " + newColor.B;
+                        lblSCs.Text += "\nnewColor: ";
+
+                        x.HasChanged = true;
+                        GetSystemColor();
+                    }
+                });
+
+            }
+            else { System.Windows.Forms.MessageBox.Show("What?"); }
+        }
+
+        private void resetbut_Click(object sender, EventArgs e)
+        {
+            ResetColors();
+        }
+
+
+        [Obsolete]
+        public void getZone()
+        {
+            TIME_ZONE_INFORMATION tIME_ZONE_INFORMATION = new TIME_ZONE_INFORMATION();
+            uint h = GetTimeZoneInformation(out tIME_ZONE_INFORMATION);
+            GZI.Text = "Time Zone Information: " + tIME_ZONE_INFORMATION.StandardName;
+        }
+
+        private void p1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void GZI_Click(object sender, EventArgs e)
+        {
+
+        }
+    }
+}
